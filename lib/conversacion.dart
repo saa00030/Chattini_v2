@@ -1,0 +1,263 @@
+import 'dart:ui';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'pantalla_camara.dart';
+
+
+class PantallaConversacion extends StatefulWidget {
+  final Map<String, dynamic> receptor;
+  final String receptorId;
+
+  const PantallaConversacion({super.key, required this.receptor, required this.receptorId});
+
+  @override
+  State<PantallaConversacion> createState() => _PantallaConversacionState();
+}
+
+class _PantallaConversacionState extends State<PantallaConversacion> {
+  final TextEditingController _mensajes = TextEditingController();
+  final String miUid = FirebaseAuth.instance.currentUser!.uid;
+
+  // Generar un id para los mismo usuarios
+  String obtenerId(){
+    List<String> ids = [miUid, widget.receptorId];
+    ids.sort();//ordenarlo
+    return ids.join("-");
+  }
+
+  Future<void> _enviarFoto(String rutaLocal) async{
+    try{
+      String idGrupoMensajes = obtenerId();
+      // Nombre unico para el archivo en Storage
+      String nombreArchivo = "img_${DateTime.now().millisecondsSinceEpoch}.jpg";
+
+      //Subida a Storage
+      Reference ref = FirebaseStorage.instance
+        .ref()
+        .child("chats")
+        .child(idGrupoMensajes)
+        .child(nombreArchivo);
+
+      UploadTask uploadTask = ref.putFile(File(rutaLocal));
+      TaskSnapshot snapshot = await uploadTask;
+
+      //Obtenemos la URL
+      String urlImagen = await snapshot.ref.getDownloadURL();
+
+      //Guardamos en Firestore(Misma escritura que en los mensajes)
+      await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(idGrupoMensajes)
+        .collection('mensajes')
+        .add({
+        'emisorId': miUid,
+        'receptorId': widget.receptorId,
+        'texto': '', //Texto vacio
+        'urlImagen': urlImagen, //Guardamos la URL
+        'tipo': 'imagen', //Importante para saber que dibujar
+        'fechaEnvio': FieldValue.serverTimestamp(),
+      });
+      
+      //Actualizamos ultimo mensaje en la lista de chats
+      await FirebaseFirestore.instance.collection('chats').doc(idGrupoMensajes).set({
+        'ultimoMensaje': 'Foto',
+        'ultimaVez': FieldValue.serverTimestamp(),
+        'usuarios': [miUid, widget.receptorId],
+      }, SetOptions(merge: true));
+      
+    } catch(e){
+      print("Error al subir imagen: $e");
+    }
+  }
+
+  //Funcion se van a mandar mensajes usuarios
+  void _enviarMensajes() async{
+    //si estan vacios los mensajes devuelve vacío
+    if (_mensajes.text.trim().isEmpty) return;
+
+    String texto = _mensajes.text.trim();
+    //vayan limpiando lo que ya se ha escrito
+    _mensajes.clear();
+    try{
+      String idGrupoMensajes = obtenerId();
+
+      //Guarda el mensaje en sucolecciones por cada usuarios
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(idGrupoMensajes)
+          .collection('mensajes')
+          .add({
+        'emisorId':miUid,//manda el mensaje con identificador
+        'receptorId': widget.receptorId, //usuario recibe el mensaje
+        'texto' : texto, //string de mensaje que mandan
+        'fechaEnvio' : FieldValue.serverTimestamp(),//para tener un control de cuando se mandan los mensajes segun el servidor Google
+      });
+      //Actualiza la informacion de chats principal
+      await FirebaseFirestore.instance.collection('chats').doc(idGrupoMensajes).set({
+        'ultimoMensaje': texto,//saber el ultimo mensaje que se envio en la conversacion
+        'ultimaVez': FieldValue.serverTimestamp(),// saber cuando se conecto la ultima vez
+        'usuarios':[miUid,widget.receptorId],//el identificador  y el del receptor
+      }, SetOptions(merge: true));
+
+    }catch(e){
+      print("Error al enviar: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No se pudo enviar el mensaje")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.receptor['nombreUsuario'] ?? 'Chat'),
+        backgroundColor: const Color(0xFFEAA64F),
+      ),
+      body: Column(
+        children: [
+          //Listado de mensajes en ese momento
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                    .collection('chats')
+                    .doc(obtenerId())
+                    .collection('mensajes')
+                    .orderBy('fechaEnvio',descending: true)//salga los mensajes nuevos primero
+                    .snapshots(),
+              builder: (context,snapshot){
+                if (snapshot.hasError) return const Center(child: Text("Error al cargar mensajes"));
+                if (snapshot.connectionState == ConnectionState.waiting){
+                  return const Center(child: CircularProgressIndicator());
+                }
+                var mensajes_chat = snapshot.data!.docs;
+
+                //devolvemos la lista de mensajes
+                return ListView.builder(
+                  reverse: true,//de abajo hacia arriba
+                  padding: const EdgeInsets.all(12),
+                  itemCount: mensajes_chat.length,
+                  itemBuilder: (context,index){
+                    bool mi_mensaje = mensajes_chat[index]['emisorId'] == miUid;
+                    return _buildMensajeBurbuja(mensajes_chat[index]['texto'],mi_mensaje);
+                  },
+                );
+              },
+            ),
+          ),
+          //Barra de entrada mensajes, diseño de la vista al entrar , se llama al diseño
+          _buildDisenioConversacion(),
+        ],
+      ),
+    );
+  }
+
+  //bOCADILLO PARA LOS MENSAJES
+  // bOCADILLO PARA LOS MENSAJES
+  Widget _buildMensajeBurbuja(Map<String, dynamic> datos, bool mi_mensaje) {
+    // Usamos ?? '' para evitar errores si el campo no existe en documentos viejos
+    String? urlImagen = datos['urlImagen'];
+    String texto = datos['texto'] ?? '';
+
+    return Align(
+      alignment: mi_mensaje ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: mi_mensaje ? const Color(0xFFEAA64F) : Colors.grey[300],
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(15),
+            topRight: const Radius.circular(15),
+            bottomLeft: Radius.circular(mi_mensaje ? 15 : 0),
+            bottomRight: Radius.circular(mi_mensaje ? 0 : 15),
+          ),
+        ),
+        child: urlImagen != null && urlImagen.isNotEmpty
+            ? Column( // Usamos Column para poner texto y fotos juntas
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                urlImagen,
+                width: 200,
+                // Mientras carga la imagen de la nube:
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const SizedBox(
+                    width: 200,
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                },
+              ),
+            ),
+            // Si además de la foto hubiera texto, lo podrías poner aquí abajo:
+            if (texto.isNotEmpty) Padding(
+              padding: const EdgeInsets.only(top:8.0),
+              child: Text(texto, style: TextStyle(color: mi_mensaje ? Colors.white : Colors.black)),
+            ),
+          ],
+        )
+            : Text(
+          texto,
+          style: TextStyle(color: mi_mensaje ? Colors.white : Colors.black),
+        ),
+      ),
+    );
+  }
+  Widget _buildDisenioConversacion(){
+      return Container(
+        padding: const EdgeInsets.all(12),
+        color: Colors.white,
+        child: Row(
+          children: [
+            //añado el boton de la cámara
+            Expanded(
+              child: TextField(
+                controller: _mensajes,
+                decoration: InputDecoration(
+                  hintText: "Escribe aqui...",
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.camera_alt, color: Colors.grey,),
+                    onPressed: () async{
+                      final String? rutaFoto = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PantallaCamara(),
+                        ),
+                      );
+
+                      if(rutaFoto != null){
+                        _enviarFoto(rutaFoto);
+                      }
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius:  BorderRadius.circular(25)
+                  ) ,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            CircleAvatar(
+              backgroundColor: const Color(0xFFEAA64F),
+              child: IconButton(
+                icon: const Icon(Icons.send , color: Colors.white),
+                onPressed: _enviarMensajes,
+              ),
+            ),
+          ],
+        ),
+      );
+  }
+
+
+
+
+}

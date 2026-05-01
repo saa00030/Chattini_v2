@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "195160711893",
+    "project_id": "chattini-e770d",
+    "storage_bucket": "chattini-e770d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195160711893:android:0cc16c662a689ed4fff85c",
+        "android_client_info": {
+          "package_name": "com.example.instachat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "195160711893-oo8n3lvsvg57993mvbh3m58tkb076tpk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.instachat",
+            "certificate_hash": "071a5f7e930528c5dd0e86f5276efbba240c34a8"
+          }
+        },
+        {
+          "client_id": "195160711893-71ploo9iivn26hgqmnl3h5tl3lbkhu3g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTVKYD2r87y-8u3yLW4HDD6oBY05fG4Aw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "195160711893-71ploo9iivn26hgqmnl3h5tl3lbkhu3g.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "195160711893-2684o1c0n8o4c629hpe9dat46fdag8d8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.instachat"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195160711893:android:b28b33f4dde1c266fff85c",
+        "android_client_info": {
+          "package_name": "com.example.instachat_v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "195160711893-71ploo9iivn26hgqmnl3h5tl3lbkhu3g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTVKYD2r87y-8u3yLW4HDD6oBY05fG4Aw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "195160711893-71ploo9iivn26hgqmnl3h5tl3lbkhu3g.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "195160711893-2684o1c0n8o4c629hpe9dat46fdag8d8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.instachat"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
