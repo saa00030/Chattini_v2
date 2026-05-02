@@ -22,26 +22,79 @@ class _RegistroPagina extends State<RegistroPagina>{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Bienvenido a Instachat"), centerTitle: true),
-      body: Padding(
-        padding: const EdgeInsets.all(18.0),
-        child: Form(
-          key: _formKeys,
-        child:SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Registrarte",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end:  Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFDAB5),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child:Padding(
+          padding: const EdgeInsets.all(25.0),
+          child: Form(
+            key: _formKeys,
+          child:SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/iconochattinit.png',
+                  height: 100,
+                  width: 100,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Registrarte",
+                style: TextStyle(fontSize: 24,
+                    color: Color(0xFFEAA64F),
+                    fontWeight: FontWeight.bold),
+              ),
+
+
             const SizedBox(height: 30),
+            //Nombre usuario
             TextFormField(
               controller: _nombreUsuarioController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: "Nombre de usuario",
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person_outline)
+                filled: true,
+                fillColor: Colors.white,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.person_outline),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Color(0xFFFFD9B3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                  borderSide: const BorderSide(
+                    color: Color(0xFFEAA64F), // Color naranja al escribir
+                    width: 1.5,
+                  ),
+                ),
+
+                // 3. BORDE DE ERROR (Por si la validación falla)
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent),
+                ),
+
+                // 4. BORDE DE ERROR CUANDO ESTÁS ESCRIBIENDO
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+                ),
               ),
               validator: (value){
                 if (value == null || value.isEmpty)
@@ -51,13 +104,43 @@ class _RegistroPagina extends State<RegistroPagina>{
                 return null;
               },
             ),
+
+
             const SizedBox(height: 20),
+            //Email
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: "Correo electrónico",
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
+                border: const OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
+                prefixIcon: const Icon(Icons.email),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // Redondeado
+                  borderSide: const BorderSide(color: Color(0xFFFFD9B3)), // Borde color crema (casi invisible)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                  borderSide: const BorderSide(
+                    color: Color(0xFFEAA64F), // Color naranja al escribir
+                    width: 1.5,
+                  ),
+                ),
+
+                // 3. BORDE DE ERROR (Por si la validación falla)
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent),
+                ),
+
+                // 4. BORDE DE ERROR CUANDO ESTÁS ESCRIBIENDO
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+                ),
               ),
               validator: (value){
                 if(value == null || !value.contains("@")){
@@ -66,6 +149,8 @@ class _RegistroPagina extends State<RegistroPagina>{
                 return null;
                 },
             ),
+
+            //Contraseña
             const SizedBox(height: 20),
             TextFormField(
               controller: _passwordController,
@@ -73,7 +158,34 @@ class _RegistroPagina extends State<RegistroPagina>{
               decoration: InputDecoration(
                 labelText: "Contraseña",
                 border: const OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
                 prefixIcon: const Icon(Icons.lock),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // Redondeado
+                  borderSide: const BorderSide(color: Color(0xFFFFD9B3)), // Borde color crema (casi invisible)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                  borderSide: const BorderSide(
+                    color: Color(0xFFEAA64F), // Color naranja al escribir
+                    width: 1.5,
+                  ),
+                ),
+
+                // 3. BORDE DE ERROR (Por si la validación falla)
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent),
+                ),
+
+                // 4. BORDE DE ERROR CUANDO ESTÁS ESCRIBIENDO
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+                ),
                 suffixIcon:IconButton(
                   icon: _passwordVisible ? const Icon(Icons.visibility) : const Icon(Icons.visibility_off),
                   onPressed: () {
@@ -97,6 +209,9 @@ class _RegistroPagina extends State<RegistroPagina>{
                 return null;
               },
             ),
+
+
+            //Campo repetir contraseña
             const SizedBox(height: 20),
             TextFormField(
               controller: _repetirpasswordController,
@@ -104,8 +219,35 @@ class _RegistroPagina extends State<RegistroPagina>{
               // Para ocultar la contraseña
               decoration: InputDecoration(
                 labelText: "Repetir contraseña",
+                filled: true,
+                fillColor: Colors.white,
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.lock),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // Redondeado
+                  borderSide: const BorderSide(color: Color(0xFFFFD9B3)), // Borde color crema (casi invisible)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                  borderSide: const BorderSide(
+                    color: Color(0xFFEAA64F), // Color naranja al escribir
+                    width: 1.5,
+                  ),
+                ),
+
+                // 3. BORDE DE ERROR (Por si la validación falla)
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent),
+                ),
+
+                // 4. BORDE DE ERROR CUANDO ESTÁS ESCRIBIENDO
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+                ),
                 suffixIcon: IconButton(
                   icon: _passwordVisible ? const Icon(Icons.visibility) : const Icon(Icons.visibility_off),
                   onPressed: () {
@@ -130,14 +272,21 @@ class _RegistroPagina extends State<RegistroPagina>{
               },
 
             ),
+
+
+
+            //Boton registro
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEAA64F),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                 ),
                 onPressed: () async {
@@ -173,7 +322,21 @@ class _RegistroPagina extends State<RegistroPagina>{
                 child: const Text("Ingresar",style: TextStyle(fontSize: 20),),
               ),
             ),
+
+              //Boton para volver atras
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  '¿Ya tienes cuenta? Inicia sesión',
+                  style: TextStyle(
+                    color: Color(0xFFEAA64F),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
           ],
+        ),
+      ),
         ),
       ),
         ),

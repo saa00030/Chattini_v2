@@ -44,9 +44,14 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               //Logo
-              const Icon(Icons.chat_bubble_rounded,
-                  size: 80,
-                  color: Color(0xFFEAA64F)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/iconochattinit.png',
+                  height: 100,
+                  width: 100,
+                  fit: BoxFit.cover,
+                ),
               ),
               const SizedBox(height: 10),
                 Text(
@@ -67,6 +72,7 @@ class _LoginPageState extends State<LoginPage> {
                   fillColor: Colors.white,
                   //Icono de email
                   prefixIcon: Icon(Icons.email,color: Color(0xFFEAA64F)),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
                   border: OutlineInputBorder(
                     borderRadius: new BorderRadius.circular(15),
                     borderSide:  BorderSide.none,
@@ -74,6 +80,25 @@ class _LoginPageState extends State<LoginPage> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                     borderSide: const BorderSide(color : Color(0xFFFFD9B3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                    borderSide: const BorderSide(
+                      color: Color(0xFFEAA64F), // Color naranja al escribir
+                      width: 1.5,
+                    ),
+                  ),
+
+                  // 3. BORDE DE ERROR (Por si la validación falla)
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Colors.redAccent),
+                  ),
+
+                  // 4. BORDE DE ERROR CUANDO ESTÁS ESCRIBIENDO
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                   ),
                 ),
                 validator: (value)=>(value == null || !value.contains('@'))?"Introduce un correro válido": null,
@@ -86,10 +111,11 @@ class _LoginPageState extends State<LoginPage> {
                 labelText: "Contraseña",
                 filled: true,
                 fillColor:Colors.white,
-                border: const OutlineInputBorder(),
                 prefixIcon: Icon(Icons.lock,color: Color(0xFFEAA64F)),
+                constraints: const BoxConstraints(maxHeight: 55, minHeight: 55),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 suffix:IconButton(
-                  icon: Icon(
+                    icon: Icon(
                     _passwordVisible ? Icons.visibility : Icons.visibility_off,),
                   onPressed: () {
                     setState(() {
@@ -99,7 +125,26 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
+                  borderSide: const BorderSide(color: Color(0xFFFFD9B3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                  borderSide: const BorderSide(
+                    color: Color(0xFFEAA64F), // Color naranja al escribir
+                    width: 1.5,
+                  ),
+                ),
+
+                // 3. BORDE DE ERROR (Por si la validación falla)
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent),
+                ),
+
+                // 4. BORDE DE ERROR CUANDO ESTÁS ESCRIBIENDO
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                 ),
               ),
               validator: (value) {
