@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'pantallaChats.dart';
 import 'pantallaInicioVacia.dart';
+import 'main.dart';
 
 class RegistroPagina extends StatefulWidget{
   const RegistroPagina({super.key});
@@ -22,6 +23,20 @@ class _RegistroPagina extends State<RegistroPagina>{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //Flecha para volver al login
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFEAA64F)),
+          onPressed: (){
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      //Para que el cuerpo se vea debajo del AppBar transparente
+      extendBodyBehindAppBar: true,
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -306,12 +321,14 @@ class _RegistroPagina extends State<RegistroPagina>{
                         'uid': credencial.user!.uid,
                         'fechaRegistro': DateTime.now(),
                         'busqueda': _nombreUsuarioController.text.trim().toLowerCase(),
+                        'mis_chats': [],
                       });
 
                       if (mounted) {
-                        Navigator.push(
+                        Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => const Pantallainiciovacia()),
+                          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+                            (Route<dynamic> route) => false,
                         );
                       }
                     } on FirebaseAuthException catch (e) {

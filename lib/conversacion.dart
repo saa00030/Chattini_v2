@@ -11,6 +11,7 @@ class PantallaConversacion extends StatefulWidget {
   final Map<String, dynamic> receptor;
   final String receptorId;
 
+
   const PantallaConversacion({super.key, required this.receptor, required this.receptorId});
 
   @override
@@ -20,6 +21,7 @@ class PantallaConversacion extends StatefulWidget {
 class _PantallaConversacionState extends State<PantallaConversacion> {
   final TextEditingController _mensajes = TextEditingController();
   final String miUid = FirebaseAuth.instance.currentUser!.uid;
+  bool _subiendoImagen = false;
 
   // Generar un id para los mismo usuarios
   String obtenerId(){
@@ -29,6 +31,9 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
   }
 
   Future<void> _enviarFoto(String rutaLocal) async{
+    setState(() {
+      _subiendoImagen = true;
+    });
     try{
       String idGrupoMensajes = obtenerId();
       // Nombre unico para el archivo en Storage
@@ -67,9 +72,29 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
         'ultimaVez': FieldValue.serverTimestamp(),
         'usuarios': [miUid, widget.receptorId],
       }, SetOptions(merge: true));
+
+      //Añadir al receptor a MI lista de chats
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(miUid)
+          .update({
+        'mis_chats': FieldValue.arrayUnion([widget.receptorId])
+      });
+
+      //Añadirme a mi en la lista de chats del receptor
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.receptorId)
+          .update({
+        'mis_chats': FieldValue.arrayUnion([miUid])
+      });
       
     } catch(e){
       print("Error al subir imagen: $e");
+    } finally{
+      setState(() {
+        _subiendoImagen = false;
+      });
     }
   }
 
@@ -102,6 +127,21 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
         'usuarios':[miUid,widget.receptorId],//el identificador  y el del receptor
       }, SetOptions(merge: true));
 
+      //Añadir al receptor a MI lista de chats
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(miUid)
+          .update({
+          'mis_chats': FieldValue.arrayUnion([widget.receptorId])
+      });
+
+      //Añadirme a mi en la lista de chats del receptor
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.receptorId)
+          .update({
+        'mis_chats': FieldValue.arrayUnion([miUid])
+      });
     }catch(e){
       print("Error al enviar: $e");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -112,7 +152,9 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Stack(
+      children: [
+        Scaffold(
       appBar: AppBar(
         title: Text(widget.receptor['nombreUsuario'] ?? 'Chat'),
         backgroundColor: const Color(0xFFEAA64F),
@@ -141,8 +183,9 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
                   padding: const EdgeInsets.all(12),
                   itemCount: mensajes_chat.length,
                   itemBuilder: (context,index){
-                    bool mi_mensaje = mensajes_chat[index]['emisorId'] == miUid;
-                    return _buildMensajeBurbuja(mensajes_chat[index]['texto'],mi_mensaje);
+                    Map<String, dynamic> datosMensaje = mensajes_chat[index].data() as Map<String, dynamic>;
+                    bool mi_mensaje = datosMensaje['emisorId'] == miUid;
+                    return _buildMensajeBurbuja(datosMensaje, mi_mensaje);
                   },
                 );
               },
@@ -152,6 +195,22 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
           _buildDisenioConversacion(),
         ],
       ),
+    ),
+        if(_subiendoImagen)
+          Container(
+            color: Colors.black45,
+              child: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: Color(0XFFEAA64F)),
+                    SizedBox(height: 15),
+                    Text("Subiendo foto...", style: TextStyle(color: Colors.white, decoration: TextDecoration.none, fontSize: 16)),
+                  ],
+                ),
+              ),
+          ),
+      ],
     );
   }
 

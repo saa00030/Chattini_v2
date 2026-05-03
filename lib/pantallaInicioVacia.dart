@@ -5,6 +5,7 @@ import 'conversacion.dart';
 import 'dialogo_buscar_usuario.dart';
 import 'pantallaChats.dart';
 
+
 class Pantallainiciovacia extends StatefulWidget {
   const Pantallainiciovacia({super.key});
 
@@ -56,6 +57,33 @@ class _pantalla_inicio_vaciaState extends State<Pantallainiciovacia> {
             icon: const Icon(Icons.search, color: Colors.white),
             onPressed: () => _mostrarBusqueda(),
           ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white,),
+            tooltip: 'Cerrar sesion',
+            onPressed: () async{
+              bool? confirmar = await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Cerrar Sesion"),
+                    content: const Text("¿Quieres salir de Chattini?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("Cancelar"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text("Salir", style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  )
+              );
+              if (confirmar == true){
+                await FirebaseAuth.instance.signOut();
+                // El AuthWrapper detectará el cambio y te manda al Login solo.
+              }
+            },
+          )
         ],
       ),
 
