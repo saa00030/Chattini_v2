@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+//Usando Singleton
 class DataBase {
   //intancia de la clase
   static final DataBase _base = DataBase._internal();

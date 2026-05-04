@@ -7,12 +7,16 @@ import 'firebase_options.dart';
 import 'login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'pantallaChats.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  //Para que salga en español el mensaje de leido
+  timeago.setLocaleMessages('es', timeago.EsMessages());
+  timeago.setLocaleMessages('es_short', timeago.EsShortMessages());
   runApp(const MyApp());
 }
 

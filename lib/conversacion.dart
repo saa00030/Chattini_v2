@@ -4,7 +4,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:path/path.dart' as p;
 import 'pantalla_camara.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 
 class PantallaConversacion extends StatefulWidget {
@@ -23,6 +25,11 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
   final String miUid = FirebaseAuth.instance.currentUser!.uid;
   bool _subiendoImagen = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _marcarMensajesLeidos();
+}
   // Generar un id para los mismo usuarios
   String obtenerId(){
     List<String> ids = [miUid, widget.receptorId];
@@ -63,6 +70,7 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
         'texto': '', //Texto vacio
         'urlImagen': urlImagen, //Guardamos la URL
         'tipo': 'imagen', //Importante para saber que dibujar
+        'leido': false,
         'fechaEnvio': FieldValue.serverTimestamp(),
       });
       
@@ -118,6 +126,7 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
         'emisorId':miUid,//manda el mensaje con identificador
         'receptorId': widget.receptorId, //usuario recibe el mensaje
         'texto' : texto, //string de mensaje que mandan
+        'leido': false,
         'fechaEnvio' : FieldValue.serverTimestamp(),//para tener un control de cuando se mandan los mensajes segun el servidor Google
       });
       //Actualiza la informacion de chats principal
@@ -175,6 +184,8 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
                 if (snapshot.connectionState == ConnectionState.waiting){
                   return const Center(child: CircularProgressIndicator());
                 }
+                //Si llegan mensajes mientras los envio 
+                WidgetsBinding.instance.addPostFrameCallback((_) => _marcarMensajesLeidos());
                 var mensajes_chat = snapshot.data!.docs;
 
                 //devolvemos la lista de mensajes
@@ -214,12 +225,23 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
     );
   }
 
-  //bOCADILLO PARA LOS MENSAJES
   // bOCADILLO PARA LOS MENSAJES
   Widget _buildMensajeBurbuja(Map<String, dynamic> datos, bool mi_mensaje) {
     // Usamos ?? '' para evitar errores si el campo no existe en documentos viejos
     String? urlImagen = datos['urlImagen'];
     String texto = datos['texto'] ?? '';
+
+    bool leido = datos['leido'] ?? false;
+
+    //Controlando la fecha de mensajes
+    dynamic fecha = datos['fechaEnvio'];
+    String horaRelativa = '...';
+
+    if (fecha != null && fecha is Timestamp){
+      horaRelativa = timeago.format(fecha.toDate(), locale: 'es_short');
+    }
+
+
 
     return Align(
       alignment: mi_mensaje ? Alignment.centerRight : Alignment.centerLeft,
@@ -235,10 +257,13 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
             bottomRight: Radius.circular(mi_mensaje ? 0 : 15),
           ),
         ),
-        child: urlImagen != null && urlImagen.isNotEmpty
-            ? Column( // Usamos Column para poner texto y fotos juntas
-          crossAxisAlignment: CrossAxisAlignment.start,
+
+        child: Column( // Usamos Column para poner texto y fotos juntas
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
+            //Si hay imagen
+            if (urlImagen != null && urlImagen.isNotEmpty)
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Image.network(
@@ -256,15 +281,43 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
               ),
             ),
             // Si además de la foto hubiera texto, lo podrías poner aquí abajo:
-            if (texto.isNotEmpty) Padding(
-              padding: const EdgeInsets.only(top:8.0),
-              child: Text(texto, style: TextStyle(color: mi_mensaje ? Colors.white : Colors.black)),
+            if (texto.isNotEmpty)
+              Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                  texto,
+                  style: TextStyle(
+                      color: mi_mensaje ? Colors.white : Colors.black,
+                      fontSize : 16,
+                  ),
+              ),
             ),
+
+
+            const SizedBox(height: 4),
+              //Hora y check mensaje
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    horaRelativa,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: mi_mensaje ? Colors.white : Colors.black
+                    ),
+                  ),
+                  //el condicional que confirma la validacion
+                  if (mi_mensaje) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      leido ? Icons.done_all : Icons.done,
+                      size: 14 ,
+                      color: leido ? Colors.blueAccent : (mi_mensaje ? Colors.white70 : Colors.grey),
+                    ),
+                  ],
+                ],
+              ),
           ],
-        )
-            : Text(
-          texto,
-          style: TextStyle(color: mi_mensaje ? Colors.white : Colors.black),
         ),
       ),
     );
@@ -316,7 +369,18 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
       );
   }
 
+  void _marcarMensajesLeidos() async{
+    String idChat = obtenerId();
+    var query = await FirebaseFirestore.instance
+      .collection('chats')
+      .doc(idChat)
+      .collection('mensajes')
+      .where('receptorId',isEqualTo: miUid) //Mensajes enviados a mí
+      .where('leido',isEqualTo: false)
+      .get();
 
-
-
+    for (var doc in query.docs){
+      doc.reference.update({'leido' : true});
+    }
+  }
 }
