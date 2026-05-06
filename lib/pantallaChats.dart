@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:instachat_v2/conversacion.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dialogo_buscar_usuario.dart';
+import 'pantallaInicioVacia.dart';
 
 class ListaContactos extends StatefulWidget {
   const ListaContactos({super.key});
@@ -13,6 +15,38 @@ class ListaContactos extends StatefulWidget {
 class _ListaContactosState extends State<ListaContactos> {
   final String miUid = FirebaseAuth.instance.currentUser!.uid;
 
+  //Mismo codigo que en pantallaInicioVacia salvo un cambio
+  void _mostrarBusqueda() async {
+
+    final resultado = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => const DialogoBuscarUsuario(),
+    );
+
+    //Si el usuario selecciono a alguien
+    if (resultado != null){
+      //EL CAMBIO, aqui no necesitamos setState de mischats.add
+      //porque al entrar en la conversacion y enviar el mensaje
+      // el StreamBuilder detectara el cambio en Firebase
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => PantallaConversacion(
+                receptor: {
+                  'nombreUsuario': resultado['nombreUsuario']!,
+                  'uid': resultado['uid'],
+                },
+            receptorId: resultado['uid']!,
+            ),
+        ),
+      );
+    }
+
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,8 +54,15 @@ class _ListaContactosState extends State<ListaContactos> {
         title: const Text('Contactos'),
         backgroundColor: const Color(0xFFEAA64F),
         elevation: 0,
-        //Boton de cerrar sesion
+        //Boton de busqueda
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: (){
+              _mostrarBusqueda();
+            },
+          ),
+          //Boton de cerrar sesion
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white,),
             tooltip: 'Cerrar sesion',

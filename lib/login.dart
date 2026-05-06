@@ -198,12 +198,8 @@ class _LoginPageState extends State<LoginPage> {
                         password: _passwordController.text,
                       );
                       if (mounted) {
-                        print("Login en Firebase OK");
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Pantallainiciovacia()),
-                        );
+
+                        Navigator.of(context).popUntil((route) => route.isFirst);
                       }
                     } on FirebaseAuthException catch (e) {
                       print("Error");
