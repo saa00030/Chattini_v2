@@ -44,6 +44,8 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.1
   timeago: ^3.7.1
+  record: ^6.2.0
+  audioplayers: ^6.6.0
 
 dev_dependencies:
   flutter_test:

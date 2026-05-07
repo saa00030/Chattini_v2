@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'pantalla_camara.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 
 class PantallaConversacion extends StatefulWidget {
@@ -24,6 +27,48 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
   final TextEditingController _mensajes = TextEditingController();
   final String miUid = FirebaseAuth.instance.currentUser!.uid;
   bool _subiendoImagen = false;
+  bool _grabando = false;
+
+  final AudioRecorder audioRecorder = AudioRecorder();
+  AudioPlayer audioplayer = AudioPlayer();
+
+  //Iniciamos grabacion
+  Future<void> _empezarAGrabar() async {
+    if(await audioRecorder.hasPermission()){
+      final directorio = await getApplicationDocumentsDirectory();
+      //Creamos un nombre unico para un archivo temporal
+      String path = '${directorio.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+      await audioRecorder.start(const RecordConfig(), path: path);
+
+      setState((){
+        _grabando = true; //Notificamos a la interfaz
+      });
+    }
+  }
+
+  Future<void> _pararGrabacion() async {
+    final path = await audioRecorder.stop();
+    
+    setState((){
+      _grabando = false;
+    });
+
+    if (path != null){
+      _subirAudioAFirebase(File(path));
+    }
+  }  
+
+  Future<void> _subirAudioAFirebase(File file) async{
+    String nombre = "audio_${DateTime.now().millisecondsSinceEpoch}.m4a";
+    var ref = FirebaseStorage.instance.ref().child("audios").child(nombre);
+
+    await ref.putFile(file);
+    String url = await ref.getDownloadURL();
+
+    //Guardar en Firestore como mensaje
+    _enviarMensajes(url: url, tipo: "audio");
+  }
 
   @override
   void initState() {

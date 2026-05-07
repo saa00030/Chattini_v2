@@ -66,5 +66,6 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-</dict>
+	<key>NSMicrophoneUsageDescription</key>
+    <string>Necesitamos acceso al micrófono para que puedas enviar mensajes de voz en Chattini.</string></dict>
 </plist>

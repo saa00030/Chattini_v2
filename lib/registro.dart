@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:instachat_v2/modelos/firebase_service.dart';
 import 'pantallaChats.dart';
 import 'pantallaInicioVacia.dart';
 import 'main.dart';
@@ -19,6 +20,8 @@ class _RegistroPagina extends State<RegistroPagina>{
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _repetirpasswordController = TextEditingController();
   final TextEditingController _nombreUsuarioController = TextEditingController();
+
+  final FirebaseService autenticationService = FirebaseService();
 
   @override
   Widget build(BuildContext context) {
@@ -307,22 +310,11 @@ class _RegistroPagina extends State<RegistroPagina>{
                 onPressed: () async {
                   if (_formKeys.currentState!.validate()) {
                     try {
-                      UserCredential credencial = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                      await autenticationService.registrarUser(
+                        nombreUser: _nombreUsuarioController.text,
                         email: _emailController.text.trim(),
                         password: _passwordController.text,
                       );
-
-                      await FirebaseFirestore.instance
-                          .collection('usuarios')
-                          .doc(credencial.user!.uid)
-                          .set({
-                        'nombreUsuario': _nombreUsuarioController.text.trim(),
-                        'correo': _emailController.text.trim(),
-                        'uid': credencial.user!.uid,
-                        'fechaRegistro': DateTime.now(),
-                        'busqueda': _nombreUsuarioController.text.trim().toLowerCase(),
-                        'mis_chats': [],
-                      });
 
                       if (mounted) {
                         Navigator.pushAndRemoveUntil(
@@ -332,7 +324,15 @@ class _RegistroPagina extends State<RegistroPagina>{
                         );
                       }
                     } on FirebaseAuthException catch (e) {
-                      // tu código de errores ya existente
+                      String mensajesError = "Error al registrar";
+                      if (e.code == "email-already-in-use") {
+                        mensajesError = "Este correo ya está registrado";
+                      } else if (e.code == "weak-password") {
+                        mensajesError = "Contraseña  debil";
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(mensajesError))
+                      );
                     }
                   }
                 },

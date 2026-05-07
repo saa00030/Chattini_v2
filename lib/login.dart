@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:instachat_v2/pantallaChats.dart';
-import 'package:instachat_v2/pantallaInicioVacia.dart';
+import 'package:instachat_v2/modelos/firebase_service.dart';
+
 import 'package:instachat_v2/registro.dart';
 
 class LoginPage extends StatefulWidget {
@@ -18,6 +18,9 @@ class _LoginPageState extends State<LoginPage> {
   // Estos controladores nos permiten extraer el texto de los campos
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  //llamada a la instanciaFirebase
+  final FirebaseService autenticationService = FirebaseService();
 
   @override
   Widget build(BuildContext context) {
@@ -189,13 +192,11 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 onPressed: () async {
-                  print("Boton pulsado");
                   if (_formKeys.currentState!.validate()) {
-                    print("Validacion correcta");
                     try {
-                      await FirebaseAuth.instance.signInWithEmailAndPassword(
-                        email: _emailController.text.trim(),
-                        password: _passwordController.text,
+                      await autenticationService.iniciarSesion(
+                        _emailController.text.trim(),
+                        _passwordController.text,
                       );
                       if (mounted) {
 
@@ -217,7 +218,7 @@ class _LoginPageState extends State<LoginPage> {
                     }
                   }
                 },
-                child: const Text("Ingresar",style: TextStyle(fontSize: 20),),
+                child: const Text("Inciar Sesión",style: TextStyle(fontSize: 20),),
               ),
             ),
           ],
