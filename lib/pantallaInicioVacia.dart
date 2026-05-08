@@ -49,7 +49,7 @@ class _pantalla_inicio_vaciaState extends State<Pantallainiciovacia> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chattini', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Chattini', style: TextStyle(fontWeight: FontWeight.normal)),
         centerTitle: true,
         backgroundColor: const Color(0xFFEAA64F),
         actions: [

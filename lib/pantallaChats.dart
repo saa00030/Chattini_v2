@@ -51,10 +51,9 @@ class _ListaContactosState extends State<ListaContactos> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Contactos'),
-        backgroundColor: const Color(0xFFEAA64F),
-        elevation: 0,
-        //Boton de busqueda
+        title: const Text('Chattini', style: TextStyle(fontWeight: FontWeight.normal)),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFEAA64F),        //Boton de busqueda
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.white),
