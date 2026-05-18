@@ -14,6 +14,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKeys = GlobalKey<FormState>();
   bool _passwordVisible = false;
+  bool _cargando = false;
 
   // Estos controladores nos permiten extraer el texto de los campos
   final TextEditingController _emailController = TextEditingController();
@@ -21,6 +22,14 @@ class _LoginPageState extends State<LoginPage> {
 
   //llamada a la instanciaFirebase
   final FirebaseService autenticationService = FirebaseService();
+
+  @override
+  void dispose() {
+    // Liberamos la memoria de los controladores al destruir la pantalla
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +78,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 30),
               TextFormField(
                 controller: _emailController,
+                enabled: !_cargando,
                 decoration:  InputDecoration(
                   labelText: "Correo electrónico",
                   filled: true,
@@ -104,22 +114,22 @@ class _LoginPageState extends State<LoginPage> {
                     borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                   ),
                 ),
-                validator: (value)=>(value == null || !value.contains('@'))?"Introduce un correro válido": null,
+                validator: (value)=>(value == null || !value.contains('@'))?"Introduce un correo válido": null,
               ),
             const SizedBox(height: 20),
             TextFormField(
               controller: _passwordController,
               obscureText: !_passwordVisible, // Para ocultar la contraseña
+              enabled: !_cargando, //El usuario tiene que esperar
               decoration:  InputDecoration(
                 labelText: "Contraseña",
                 filled: true,
                 fillColor:Colors.white,
                 prefixIcon: Icon(Icons.lock,color: Color(0xFFEAA64F)),
-                constraints: const BoxConstraints(maxHeight: 55, minHeight: 55),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                suffix:IconButton(
-                    icon: Icon(
-                    _passwordVisible ? Icons.visibility : Icons.visibility_off,),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                // SuffixIcon para que el diseño y el centrado sean automáticos y limpios
+                suffixIcon: IconButton(
+                  icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
                   onPressed: () {
                     setState(() {
                       _passwordVisible = !_passwordVisible;
@@ -191,34 +201,43 @@ class _LoginPageState extends State<LoginPage> {
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),
-                onPressed: () async {
-                  if (_formKeys.currentState!.validate()) {
-                    try {
-                      await autenticationService.iniciarSesion(
-                        _emailController.text.trim(),
-                        _passwordController.text,
-                      );
-                      if (mounted) {
+                  onPressed: _cargando
+                      ? null // Deshabilita el botón si ya está cargando
+                      : () async {
+                    if (_formKeys.currentState!.validate()) {
+                      setState(() {
+                        _cargando = true;
+                      });
+                      try {
+                        await autenticationService.iniciarSesion(
+                          _emailController.text.trim(),
+                          _passwordController.text,
+                        );
 
-                        Navigator.of(context).popUntil((route) => route.isFirst);
+                        // AuthWrapper detecta la sesión y cambia la pantalla automáticamente.
+
+                      } on FirebaseAuthException catch (e) {
+                        setState(() {
+                          _cargando = false;
+                        });
+
+                        String mensajeError = "Ocurrió un error";
+                        // Firebase maneja códigos ligeramente distintos para login (invalid-credential abarca ambos a veces)
+                        if (e.code == "user-not-found" || e.code == "invalid-credential") {
+                          mensajeError = "Credenciales incorrectas o el usuario no existe";
+                        } else if (e.code == "wrong-password") {
+                          mensajeError = "Contraseña incorrecta";
+                        } else if (e.code == "invalid-email") {
+                          mensajeError = "El correo no es válido";
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(mensajeError))
+                        );
                       }
-                    } on FirebaseAuthException catch (e) {
-                      print("Error");
-                      String mensajeError = "Ocurrió un error";
-                      if (e.code == "user-not-found") {
-                        mensajeError = "El usuario no existe";
-                      } else if (e.code == "wrong-password") {
-                        mensajeError = "Contraseña incorrecta";
-                      } else if (e.code == "invalid-email") {
-                        mensajeError = "El correo no es válido";
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(mensajeError))
-                      );
                     }
-                  }
-                },
-                child: const Text("Inciar Sesión",style: TextStyle(fontSize: 20),),
+                  },
+                child: const Text("Iniciar Sesión",style: TextStyle(fontSize: 20),),
               ),
             ),
           ],

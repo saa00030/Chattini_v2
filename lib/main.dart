@@ -42,47 +42,22 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    //Este primer StreamBuilder mira si el usuario esta logueado
     return StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot){
+        builder: (context, authSnapshot){
           //Cargando conexion de auth
-          if (snapshot.connectionState == ConnectionState.waiting){
+          if (authSnapshot.connectionState == ConnectionState.waiting){
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
 
           //Si NO hay usuario, a la pantalla de login
-          if(!snapshot.hasData || snapshot.data == null){
+          if(!authSnapshot.hasData){
             return const LoginPage();
           }
 
-          //Si SI hay usuario, miramos su base de datos
-          return FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance
-                .collection('usuarios')
-                .doc(snapshot.data!.uid)
-                .get(),
-            builder: (context, userSnapshot){
-              if(userSnapshot.connectionState == ConnectionState.waiting){
-                return const Scaffold(
-                  backgroundColor: Color(0xFFFFDAB5),
-                  body: Center(child: CircularProgressIndicator(color: Color(0xFFEAA64F))),
-                );
-              }
-
-              if (userSnapshot.hasData && userSnapshot.data!.exists){
-                //Sacamos la lista de chats del usuario
-                List<dynamic> misChats = userSnapshot.data!.get('mis_chats') ?? [];
-
-                //Decision final
-                if(misChats.isEmpty){
-                  return const Pantallainiciovacia();
-                }else{
-                  return const ListaContactos();
-                }
-              }
-              return const Pantallainiciovacia();
-              },
-          );
+          //Si SI hay usuario, miramos su base de datos, mira si tiene chats o su lista esta vacia
+          return const ListaContactos();
         },
     );
   }

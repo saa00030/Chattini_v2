@@ -16,12 +16,24 @@ class RegistroPagina extends StatefulWidget{
 class _RegistroPagina extends State<RegistroPagina>{
   final _formKeys = GlobalKey<FormState>();
   bool _passwordVisible = false;
+  bool _cargando = false;
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _repetirpasswordController = TextEditingController();
   final TextEditingController _nombreUsuarioController = TextEditingController();
 
   final FirebaseService autenticationService = FirebaseService();
+
+  @override
+  void dispose() {
+    // Liberamos memoria de los controladores al destruir el widget
+    _emailController.dispose();
+    _passwordController.dispose();
+    _repetirpasswordController.dispose();
+    _nombreUsuarioController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +44,7 @@ class _RegistroPagina extends State<RegistroPagina>{
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFEAA64F)),
-          onPressed: (){
-            Navigator.pop(context);
-          },
+          onPressed: _cargando ? null : () => Navigator.pop(context),
         ),
       ),
       //Para que el cuerpo se vea debajo del AppBar transparente
@@ -82,6 +92,7 @@ class _RegistroPagina extends State<RegistroPagina>{
             //Nombre usuario
             TextFormField(
               controller: _nombreUsuarioController,
+              enabled: !_cargando,
               decoration: InputDecoration(
                 labelText: "Nombre de usuario",
                 filled: true,
@@ -128,6 +139,7 @@ class _RegistroPagina extends State<RegistroPagina>{
             //Email
             TextFormField(
               controller: _emailController,
+              enabled: !_cargando,
               decoration: InputDecoration(
                 labelText: "Correo electrónico",
                 border: const OutlineInputBorder(),
@@ -173,6 +185,7 @@ class _RegistroPagina extends State<RegistroPagina>{
             TextFormField(
               controller: _passwordController,
               obscureText: !_passwordVisible, // Para ocultar la contraseña
+              enabled: !_cargando,
               decoration: InputDecoration(
                 labelText: "Contraseña",
                 border: const OutlineInputBorder(),
@@ -222,7 +235,7 @@ class _RegistroPagina extends State<RegistroPagina>{
                     r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]')
                     .hasMatch(value);
                 if (!tieneFormato) {
-                  return "Debe incluir mayúscula, minúscula, número y símbolo";
+                  return "La contraseña debe incluir:\n• Una mayúscula y una minúscula\n• Un número\n• Un símbolo (@\$!%*?&)";
                 }
                 return null;
               },
@@ -234,6 +247,7 @@ class _RegistroPagina extends State<RegistroPagina>{
             TextFormField(
               controller: _repetirpasswordController,
               obscureText: !_passwordVisible,
+              enabled: !_cargando,
               // Para ocultar la contraseña
               decoration: InputDecoration(
                 labelText: "Repetir contraseña",
@@ -278,6 +292,9 @@ class _RegistroPagina extends State<RegistroPagina>{
               validator: (value) {
                 if (value == null || value.isEmpty)
                   return "Escribe una constraseña";
+                if (value != _passwordController.text) {
+                  return "Las contraseñas no coinciden";
+                }
                 if (value.length < 8 || value.length > 20)
                   return "Debe tener entre 8 y 20 caracteres";
                 bool tieneFormato = RegExp(
@@ -307,8 +324,14 @@ class _RegistroPagina extends State<RegistroPagina>{
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),
-                onPressed: () async {
+                onPressed: _cargando
+                  ? null
+                  : () async {
                   if (_formKeys.currentState!.validate()) {
+
+                    setState(() {
+                      _cargando = true;
+                    });
                     try {
                       await autenticationService.registrarUser(
                         nombreUser: _nombreUsuarioController.text,
@@ -316,14 +339,17 @@ class _RegistroPagina extends State<RegistroPagina>{
                         password: _passwordController.text,
                       );
 
-                      if (mounted) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => const AuthWrapper()),
-                            (Route<dynamic> route) => false,
-                        );
-                      }
+                      if (!mounted) return;
+
+                      //Volvemos a la pantalla raiz, AuthWrapper se encarga del resto
+                      Navigator.pop(context);
+
                     } on FirebaseAuthException catch (e) {
+
+                      setState(() {
+                        _cargando = false;
+                      });
+
                       String mensajesError = "Error al registrar";
                       if (e.code == "email-already-in-use") {
                         mensajesError = "Este correo ya está registrado";
@@ -336,13 +362,19 @@ class _RegistroPagina extends State<RegistroPagina>{
                     }
                   }
                 },
-                child: const Text("Ingresar",style: TextStyle(fontSize: 20),),
+                child: _cargando
+                    ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                )
+                    : const Text("Registrarse", style: TextStyle(fontSize: 20)),
               ),
             ),
 
               //Boton para volver atras
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: _cargando ? null : () => Navigator.pop(context), // Bloquea si está cargando
                 child: const Text(
                   '¿Ya tienes cuenta? Inicia sesión',
                   style: TextStyle(

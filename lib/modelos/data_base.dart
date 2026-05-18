@@ -13,6 +13,12 @@ class DataBase {
   //Firestores para uso interno
   FirebaseFirestore get  _firestore => FirebaseFirestore.instance;
 
+  String generarIdChatUnico(String uid1, String uid2) {
+    List<String> ids = [uid1, uid2];
+    ids.sort(); // Ordena alfabéticamente (ej: ['abc', 'xyz'])
+    return ids.join('_'); // Resultado estable: 'abc_xyz'
+  }
+
   Stream<QuerySnapshot> obtenerMensajes(String idChat){
     return _firestore
         .collection('chats')

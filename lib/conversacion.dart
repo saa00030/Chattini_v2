@@ -33,6 +33,7 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
   //Estados
   bool _subiendoArchivo = false;
   bool _grabando = false;
+  String? _pathAudioActual;
 
   //Grabacion y audio
   final AudioRecorder audioRecorder = AudioRecorder();
@@ -48,9 +49,22 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
 
   // Logica de identificacion
   String obtenerId(){
-    List<String> ids = [miUid, widget.receptorId];
-    ids.sort();//ordenarlo
-    return ids.join("-");
+    return _db.generarIdChatUnico(miUid, widget.receptorId);
+  }
+
+  void _marcarMensajesComoLeidos() async {
+    final String idChat = obtenerId();
+    var query = await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(idChat)
+        .collection('mensajes')
+        .where('receptorId', isEqualTo: miUid) // Mensajes dirigidos a mí
+        .where('leido', isEqualTo: false)
+        .get();
+
+    for (var doc in query.docs) {
+      doc.reference.update({'leido': true});
+    }
   }
 
 
@@ -75,17 +89,22 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
     }
   }
 
-  Future<void> _pararYSubirGrabacion() async {
+  Future<void> _pararDeGrabar() async {
     final path = await audioRecorder.stop();
     
     setState((){
       _grabando = false;
+      _pathAudioActual = path; //Guardamos el archivo temporalmente
     });
 
-    if (path != null){
-      _subirArchivoAFirebase(File(path),"audio");
-    }
-  }  
+  }
+
+  void _cancelarAudio(){
+    setState(() {
+      _pathAudioActual = null;
+      _grabando = false;
+    });
+  }
 
   Future<void> _subirArchivoAFirebase(File archivo, String tipo) async{
     setState(() {
@@ -138,6 +157,8 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
               builder: (context,snapshot){
                 if(!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
+                WidgetsBinding.instance.addPostFrameCallback((_) => _marcarMensajesComoLeidos());
+
                 var mensajes_chat = snapshot.data!.docs;
 
                 //devolvemos la lista de mensajes
@@ -160,7 +181,12 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
       ),
     ),
         if(_subiendoArchivo)
-          const Center(child: CircularProgressIndicator(color: Color(0xFFEAA64F),),)
+          Container(
+            color: Colors.black26, // Aplica un sombreado gris transparente
+            child: const Center(
+              child: CircularProgressIndicator(color: Color(0xFFEAA64F)), //Carga
+            ),
+          )
       ],
     );
   }
@@ -206,7 +232,14 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
             if (tipo == 'audio')
               IconButton(
                 icon: Icon(Icons.play_circle, color: mi_mensaje ? Colors.white : Colors.black),
-                onPressed: () => audioplayer.play(UrlSource(url)),
+                onPressed: () async {
+                  try {
+                    await audioplayer.stop(); // Detiene cualquier audio que esté sonando antes
+                    await audioplayer.play(UrlSource(url)); // Reproduce el nuevo audio
+                  } catch (e) {
+                    print("Error al reproducir audio: $e");
+                  }
+                },
               ),
             if (datos['texto'] != null && datos['texto'].isNotEmpty)
               Text(datos['texto'], style: TextStyle(color: mi_mensaje ? Colors.white : Colors.black)),
@@ -238,12 +271,41 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
       ),
     );
   }
-    Widget _buildEntradaTexto(){
-
-      return Container(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: [
+  Widget _buildEntradaTexto() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        children: [
+          // Si ya ha grabado el audio y está pendiente de enviar, ocultamos el TextField
+          if (_pathAudioActual != null)
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.mic, color: Colors.red),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Audio grabado listo para enviar",
+                        maxLines: 1, // <--- OBLIGATORIO: Fuerza a que se quede en una sola línea
+                        overflow: TextOverflow.ellipsis, // <--- CLAVE: Si no cabe, añade "..." de forma elegante
+                        style: const TextStyle(
+                          fontSize: 16, // Ajusta el tamaño si lo necesitas
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+          // Si no hay audio grabado, mostramos el TextField de siempre
             Expanded(
               child: TextField(
                 controller: _mensajes,
@@ -261,9 +323,33 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
                 ),
               ),
             ),
+          const SizedBox(width: 8),
+
+          // LÓGICA DE BOTONES DINÁMICOS
+          if (_pathAudioActual != null) ...[
+            // BOTÓN CANCELAR (Papelera)
+            CircleAvatar(
+              backgroundColor: Colors.grey[400],
+              child: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.white),
+                onPressed: _cancelarAudio,
+              ),
+            ),
             const SizedBox(width: 8),
-            _mensajes.text.isNotEmpty
-                ? CircleAvatar(
+            // BOTÓN ENVIAR AUDIO
+            CircleAvatar(
+              backgroundColor: const Color(0xFFEAA64F),
+              child: IconButton(
+                icon: const Icon(Icons.send, color: Colors.white),
+                onPressed: () {
+                  _subirArchivoAFirebase(File(_pathAudioActual!), "audio");
+                  _cancelarAudio(); // Limpiamos el estado al terminar
+                },
+              ),
+            ),
+          ] else if (_mensajes.text.isNotEmpty) ...[
+            // BOTÓN ENVIAR TEXTO NORMAL
+            CircleAvatar(
               backgroundColor: const Color(0xFFEAA64F),
               child: IconButton(
                 icon: const Icon(Icons.send, color: Colors.white),
@@ -279,19 +365,21 @@ class _PantallaConversacionState extends State<PantallaConversacion> {
                   setState(() {});
                 },
               ),
-            )
-                : GestureDetector(
-              onLongPressStart: (_) => _empezarAGrabar(),
-              onLongPressEnd: (_) => _pararYSubirGrabacion(),
-              child: CircleAvatar(
-                backgroundColor: _grabando ? Colors.red : const Color(0xFFEAA64F),
-                child: Icon(_grabando ? Icons.stop : Icons.mic, color: Colors.white),
+            ),
+          ] else ...[
+            // BOTÓN DE GRABACIÓN DE AUDIO (Pulsar una vez para grabar, otra para parar)
+            CircleAvatar(
+              backgroundColor: _grabando ? Colors.red : const Color(0xFFEAA64F),
+              child: IconButton(
+                icon: Icon(_grabando ? Icons.stop : Icons.mic, color: Colors.white),
+                onPressed: _grabando ? _pararDeGrabar : _empezarAGrabar,
               ),
             ),
           ],
-        ),
-      );
-    }
+        ],
+      ),
+    );
+  }
 
 
 }

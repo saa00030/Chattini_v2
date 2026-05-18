@@ -13,25 +13,42 @@ class PantallaCamara extends StatefulWidget {
 class _PantallaCamaraState extends State<PantallaCamara> {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
+  List<CameraDescription> _camaras = [];
+  int _camaraIndex = 0;
 
   @override
   void initState(){
     super.initState();
-    _inicializarCamara();
+    _recuperarCamaras();
   }
 
-  Future<void> _inicializarCamara() async{
+  //En primer lugar obtenemos la lista de camaras disponibles
+  Future<void> _recuperarCamaras() async{
+    try {
+      _camaras = await availableCameras();
+      if (_camaras.isNotEmpty) {
+        _inicializarCamara(_camaras[_camaraIndex]);
+      }
+    } catch (e) {
+      print("Error al obtener cámaras: $e");
+    }
+  }
 
-    final camaras = await availableCameras();
-    if(camaras.isEmpty) return;
+  //Inicializamos la camara seleccionada de forma segura
+  Future<void> _inicializarCamara(CameraDescription cameraDescription) async{
 
-    //Cogemos la primera que se detecte que suele ser la trasera
-    final primeraCamara = camaras.first;
+    //Si ya habia un controlador antes, lo cerramos antes de abrir el nuevo
+    if (_controller != null){
+      await _controller!.dispose();
+    }
 
     _controller = CameraController(
-      primeraCamara,
+      cameraDescription,
       ResolutionPreset.medium,
+      enableAudio: false, //Desactivamos audio para las fotos (ahorra recursos)
     );
+
+    if(!mounted) return;
 
     setState(() {
       _initializeControllerFuture = _controller!.initialize();
@@ -59,6 +76,14 @@ class _PantallaCamaraState extends State<PantallaCamara> {
     }
   }
 
+  //Funcion para alternar entre camara frontal y trasera
+  void _conmutarCamara(){
+    if(_camaras.length < 2) return;
+
+    _camaraIndex = (_camaraIndex + 1) % _camaras.length;
+    _inicializarCamara(_camaras[_camaraIndex]);
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -66,14 +91,25 @@ class _PantallaCamaraState extends State<PantallaCamara> {
         title: const Text('Hacer Foto'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        actions: [
+          //Boton en el AppBar para girar la camara si hay mas de una disponible
+          if (_camaras.length > 1)
+            IconButton(
+              icon: const Icon(Icons.flip_camera_ios),
+              onPressed: _conmutarCamara,
+            ),
+        ],
       ),
       body: FutureBuilder<void>(
         future: _initializeControllerFuture,
-        builder: (context, snapshot){
-          if(snapshot.connectionState == ConnectionState.done){
-            return CameraPreview(_controller!);
-          }else{
-            return const Center(child: CircularProgressIndicator());
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done && _controller != null) {
+            return Center(
+              //CameraPreview: Paquete oficial de flutter
+              child: CameraPreview(_controller!),
+            );
+          } else {
+            return const Center(child: CircularProgressIndicator(color: Color(0xFFEAA64F)));
           }
         },
       ),

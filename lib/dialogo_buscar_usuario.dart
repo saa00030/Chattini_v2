@@ -15,12 +15,20 @@ class _DialogoBuscarUsuarioState extends State<DialogoBuscarUsuario> {
   final TextEditingController buscador = TextEditingController();
 
   @override
+  void dispose() {
+    // Liberamos la memoria del controlador al cerrar la pantalla
+    buscador.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chattini', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFFEAA64F),
+        foregroundColor: Colors.white,
       ),
       body: Center(
         child: Padding(

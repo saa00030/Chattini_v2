@@ -18,15 +18,14 @@ class _ListaContactosState extends State<ListaContactos> {
   //Mismo codigo que en pantallaInicioVacia salvo un cambio
   void _mostrarBusqueda() async {
 
-    final resultado = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (context) => const DialogoBuscarUsuario(),
+    final resultado = await Navigator.push<Map<String, String>>(
+      context,
+      MaterialPageRoute(builder: (context) => const DialogoBuscarUsuario()),
     );
 
     //Si el usuario selecciono a alguien
     if (resultado != null){
-      //EL CAMBIO, aqui no necesitamos setState de mischats.add
-      //porque al entrar en la conversacion y enviar el mensaje
+
       // el StreamBuilder detectara el cambio en Firebase
       if (!mounted) return;
 
@@ -91,7 +90,7 @@ class _ListaContactosState extends State<ListaContactos> {
           )
         ],
       ),
-      // 1. Primero obtenemos NUESTRO documento para leer la lista de IDs
+      // Primero obtenemos nuestro documento para leer la lista de IDs
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('usuarios').doc(miUid).snapshots(),
         builder: (context, userSnapshot) {
@@ -106,10 +105,9 @@ class _ListaContactosState extends State<ListaContactos> {
           // Extraemos la lista de IDs con los que hemos hablado
           List<dynamic> misIds = userSnapshot.data?.get('mis_chats') ?? [];
 
+          //Si no hay chats, le pasamos pantallaInicioVacia
           if (misIds.isEmpty) {
-            return const Center(
-              child: Text("Aún no tienes conversaciones activas"),
-            );
+            return Pantallainiciovacia(onBuscar: _mostrarBusqueda); //Le pasamos la funcion que tendriamos que usar para la busqueda
           }
 
           // 2. Con los IDs obtenidos, lanzamos el StreamBuilder para ver SOLO esos usuarios
