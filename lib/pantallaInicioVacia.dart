@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-//Funcionara como pagina stless, el funcionamiento viene en pantallaChats
+//Funcionara como pagina stless, el funcionamiento viene en pantallaChats. Aqui seria unicamente el diseño de la pagina
 class Pantallainiciovacia extends StatelessWidget {
   final VoidCallback onBuscar;
 
