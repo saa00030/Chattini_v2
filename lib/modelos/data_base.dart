@@ -1,24 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-//Usando Singleton
+//Esta clase se encarga de guardar, leer y enviar toda la informacion hacia firebase
+//El principal objetivo de esta clase es por si en un futuro se cambiase de firebase a otra plataforma
+//Solo habria que cambiar esta clase en todo el proyecto
 class DataBase {
   //intancia de la clase
   static final DataBase _base = DataBase._internal();
-  //constructor devuelve la misma instancia
+  //CUando pongamos database en cualquier parte de la app, este constructor nos
+  //devolvera la instancia de arriba
   factory DataBase(){
     return _base;
   }
-  //Contructor privado
+  //Contructor privado y oculto, nadie fuera de la clase puede usarlo
   DataBase._internal();
 
-  //Firestores para uso interno
+  //Firestores para uso interno y directo a las herramientas de FireStore
   FirebaseFirestore get  _firestore => FirebaseFirestore.instance;
 
+  //Se crea un ID unico para el canal uniendo los dos UIDS
+  //Por ejemplo: SI juan habla con ana, se crea id, chat ana_juan
   String generarIdChatUnico(String uid1, String uid2) {
     List<String> ids = [uid1, uid2];
     ids.sort(); // Ordena alfabéticamente (ej: ['abc', 'xyz'])
     return ids.join('_'); // Resultado estable: 'abc_xyz'
   }
 
+  //Escucha en tiempo real, devuelve un flujo constante de mensajes
   Stream<QuerySnapshot> obtenerMensajes(String idChat){
     return _firestore
         .collection('chats')
@@ -27,7 +33,7 @@ class DataBase {
         .orderBy('fechaEnvio',descending: true)//salga los mensajes nuevos primero
         .snapshots();
   }
-  //Metodo enviar mensaje
+  //Metodo enviar mensaje, guarda el mensaje en internet
   Future<void> enviarMensaje({
     required String idChat,
     required String emisorId,
@@ -36,7 +42,7 @@ class DataBase {
     String? urlContenido, //Para audio o foto
     required String tipo, //Texto, audio o imagen
   }) async{
-    //se llama donde estan los chats
+    //Apuntamos al documento de ese chat concreto
     final chatDocumento = _firestore.collection('chats').doc(idChat);
 
     //Definimos que texto vera el usuario en la lista de chats como vista previa
@@ -67,6 +73,7 @@ class DataBase {
     await _actualizarListaMisChats(emisorId, receptorId);
   }
 
+  //Se registra de forma segura que ambos usuarios tienen un chat comun
   Future<void> _actualizarListaMisChats(String emisorId, String receptorId) async{
     await _firestore.collection('usuarios').doc(emisorId).update({
       'mis_chats': FieldValue.arrayUnion([receptorId])

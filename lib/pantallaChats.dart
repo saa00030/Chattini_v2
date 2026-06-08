@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dialogo_buscar_usuario.dart';
 import 'pantallaInicioVacia.dart';
 
+//Pantalla de los chats activos
 class ListaContactos extends StatefulWidget {
   const ListaContactos({super.key});
 
@@ -13,9 +14,10 @@ class ListaContactos extends StatefulWidget {
 }
 
 class _ListaContactosState extends State<ListaContactos> {
+  //Id del usuario extraido de Firebase
   final String miUid = FirebaseAuth.instance.currentUser!.uid;
 
-  //Mismo codigo que en pantallaInicioVacia salvo un cambio
+  //Funcion que busca los usuarios con los que hemos chatteado
   void _mostrarBusqueda() async {
 
     final resultado = await Navigator.push<Map<String, String>>(
@@ -23,12 +25,13 @@ class _ListaContactosState extends State<ListaContactos> {
       MaterialPageRoute(builder: (context) => const DialogoBuscarUsuario()),
     );
 
-    //Si el usuario selecciono a alguien
+    //Si el usuario cancelo la busqueda, aborta la operacion
     if (resultado != null){
 
       // el StreamBuilder detectara el cambio en Firebase
       if (!mounted) return;
 
+      //Transfiere el control de ejecucion a la pantalla de chat especifico
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -52,8 +55,9 @@ class _ListaContactosState extends State<ListaContactos> {
       appBar: AppBar(
         title: const Text('Chattini', style: TextStyle(fontWeight: FontWeight.normal)),
         centerTitle: true,
-        backgroundColor: const Color(0xFFEAA64F),        //Boton de busqueda
+        backgroundColor: const Color(0xFFEAA64F),  //Color de la App
         actions: [
+          //Acciones de busqueda
           IconButton(
             icon: const Icon(Icons.search, color: Colors.white),
             onPressed: (){
@@ -82,6 +86,7 @@ class _ListaContactosState extends State<ListaContactos> {
                   ],
                 )
               );
+              //Si efectivamente quiere cerrar sesion, se lo hacemos saber a la funcion AuthWrapper implementada en Main
               if (confirmar == true){
                 await FirebaseAuth.instance.signOut();
                 // El AuthWrapper detectará el cambio y te manda al Login solo.
@@ -94,15 +99,16 @@ class _ListaContactosState extends State<ListaContactos> {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('usuarios').doc(miUid).snapshots(),
         builder: (context, userSnapshot) {
+          //En caso de que haya fallos de red
           if (userSnapshot.hasError) {
             return const Center(child: Text('Error de conexión'));
           }
-
+          //Mientras se resuelve el problema de red, mostramos un icono de carga
           if (userSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Extraemos la lista de IDs con los que hemos hablado
+          // Extraemos la lista de IDs con los que hemos hablado, y si no ha sido creada la creamos
           List<dynamic> misIds = userSnapshot.data?.get('mis_chats') ?? [];
 
           //Si no hay chats, le pasamos pantallaInicioVacia
@@ -126,7 +132,7 @@ class _ListaContactosState extends State<ListaContactos> {
               }
 
               var docs = snapshot.data!.docs;
-
+              //Se muestran los usuarios
               return ListView.builder(
                 itemCount: docs.length,
                 itemBuilder: (context, index) {
@@ -146,6 +152,7 @@ class _ListaContactosState extends State<ListaContactos> {
                     subtitle: const Text("Toca para chatear"),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
+                      //Si seleccionas a un usuario, te manda a la pantalla de conversacion con dicha persona
                       Navigator.push(
                         context,
                         MaterialPageRoute(

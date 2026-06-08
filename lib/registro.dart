@@ -6,6 +6,7 @@ import 'pantallaChats.dart';
 import 'pantallaInicioVacia.dart';
 import 'main.dart';
 
+//Pantalla para crear una nueva cuenta
 class RegistroPagina extends StatefulWidget{
   const RegistroPagina({super.key});
 
@@ -14,15 +15,19 @@ class RegistroPagina extends StatefulWidget{
 
 }
 class _RegistroPagina extends State<RegistroPagina>{
+  //Clave que controla y valida que los datos del formulario sean correctos
   final _formKeys = GlobalKey<FormState>();
-  bool _passwordVisible = false;
-  bool _cargando = false;
+  //Variables de control
+  bool _passwordVisible = false; //Controla que la contraseña sea visible o no
+  bool _cargando = false; //La ponemos a true cuando hay un proceso en internet
 
+  //Controladores de texto para capturar lo que el usuario escribe en cada cuadro
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _repetirpasswordController = TextEditingController();
   final TextEditingController _nombreUsuarioController = TextEditingController();
 
+  //Instancia para conectar con FireBase
   final FirebaseService autenticationService = FirebaseService();
 
   @override
@@ -51,6 +56,7 @@ class _RegistroPagina extends State<RegistroPagina>{
       extendBodyBehindAppBar: true,
 
       body: Container(
+        //Fondo con el color de la app
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -65,11 +71,12 @@ class _RegistroPagina extends State<RegistroPagina>{
           child:Padding(
           padding: const EdgeInsets.all(25.0),
           child: Form(
-            key: _formKeys,
-          child:SingleChildScrollView(
+            key: _formKeys, //Nuestro validador
+          child:SingleChildScrollView( // Permite hacer scroll vertical si el teclado tapa los campos
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              //Logo de la app redondeado
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
@@ -89,10 +96,10 @@ class _RegistroPagina extends State<RegistroPagina>{
 
 
             const SizedBox(height: 30),
-            //Nombre usuario
+            //Campo: Nombre usuario
             TextFormField(
               controller: _nombreUsuarioController,
-              enabled: !_cargando,
+              enabled: !_cargando, //Se bloquea si esta cargando
               decoration: InputDecoration(
                 labelText: "Nombre de usuario",
                 filled: true,
@@ -101,12 +108,13 @@ class _RegistroPagina extends State<RegistroPagina>{
                 prefixIcon: const Icon(Icons.person_outline),
                 contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
 
+                //Estilos de los bordes
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                   borderSide: const BorderSide(color: Color(0xFFFFD9B3)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                  borderRadius: BorderRadius.circular(15),
                   borderSide: const BorderSide(
                     color: Color(0xFFEAA64F), // Color naranja al escribir
                     width: 1.5,
@@ -125,6 +133,7 @@ class _RegistroPagina extends State<RegistroPagina>{
                   borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                 ),
               ),
+              //Reglas de validacion para el nombre
               validator: (value){
                 if (value == null || value.isEmpty)
                   return "Escribe un nombre de usuario";
@@ -136,7 +145,7 @@ class _RegistroPagina extends State<RegistroPagina>{
 
 
             const SizedBox(height: 20),
-            //Email
+            //Campo: Email
             TextFormField(
               controller: _emailController,
               enabled: !_cargando,
@@ -172,6 +181,7 @@ class _RegistroPagina extends State<RegistroPagina>{
                   borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                 ),
               ),
+              //Comprueba que el correo contenga al menos una arroba
               validator: (value){
                 if(value == null || !value.contains("@")){
                   return "El correo debe contener @";
@@ -180,7 +190,7 @@ class _RegistroPagina extends State<RegistroPagina>{
                 },
             ),
 
-            //Contraseña
+            //Campo: Contraseña
             const SizedBox(height: 20),
             TextFormField(
               controller: _passwordController,
@@ -217,6 +227,7 @@ class _RegistroPagina extends State<RegistroPagina>{
                   borderRadius: BorderRadius.circular(15),
                   borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                 ),
+                //Icono del ojo para ver/ocultar la contraseña
                 suffixIcon:IconButton(
                   icon: _passwordVisible ? const Icon(Icons.visibility) : const Icon(Icons.visibility_off),
                   onPressed: () {
@@ -226,6 +237,7 @@ class _RegistroPagina extends State<RegistroPagina>{
                   },
                 ),
               ),
+              //Filtro de seguridad para contraseña, debe de ser el mas estricto
               validator: (value) {
                 if (value == null || value.isEmpty)
                   return "Escribe una constraseña";
@@ -262,7 +274,7 @@ class _RegistroPagina extends State<RegistroPagina>{
                   borderSide: const BorderSide(color: Color(0xFFFFD9B3)), // Borde color crema (casi invisible)
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                  borderRadius: BorderRadius.circular(15),
                   borderSide: const BorderSide(
                     color: Color(0xFFEAA64F), // Color naranja al escribir
                     width: 1.5,
@@ -289,6 +301,7 @@ class _RegistroPagina extends State<RegistroPagina>{
                   },
                 ),
               ),
+              //Las mismas restricciones que antes
               validator: (value) {
                 if (value == null || value.isEmpty)
                   return "Escribe una constraseña";

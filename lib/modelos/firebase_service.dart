@@ -2,32 +2,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+//Mientras que datbase se encarga de chats y mensajes, este se encarga de seguridad y usuarios
+
 class FirebaseService {
   //Creacion instancia Firebase
+  //Controla emails, contraseñas y datos del perfil
   final FirebaseAuth autentificacion = FirebaseAuth.instance;
   final FirebaseFirestore bbdd = FirebaseFirestore.instance;
 
+  //Valida si correo y contraseñas son validos en internet
   Future<User?> iniciarSesion(String email, String password) async{
     try{
+      //Le pedimos a firebase que verifique las credenciales
       UserCredential userCredential = await autentificacion.signInWithEmailAndPassword(
           email: email,
           password: password,
       );
+      //Si esta todo bien, nos devuelve datos del usuario
       return userCredential.user;
     } on FirebaseAuthException catch  (e){
-      //Error si hay se muestre en el SnackBar
+      //Si hay algun error, lo capturamos y mostramos en el SnackBar (Aviso flotante=
       throw e;
     }
   }
+  //Metodo para registrar usuario nuevo
   Future<User?> registrarUser({
     required String nombreUser,
     required String email,
     required String password,
 }) async{
     try{
-      //Usuario en Firebase Auth
+      //Crea el Usuario en Firebase Auth
       UserCredential credenciales = await autentificacion.createUserWithEmailAndPassword(
-          email: email.trim(),
+          email: email.trim(), //.trim borra espacios en blanco
           password: password,
       );
       //Guardamos datos si todo ha ido bien
@@ -36,7 +43,7 @@ class FirebaseService {
           'nombreUsuario': nombreUser.trim(),
           'correo': email.trim(),
           'uid': credenciales.user!.uid,
-          'fechaRegistro': DateTime.now(),
+          'fechaRegistro': DateTime.now(), //Dia y hora del registro
           'busqueda': nombreUser.trim().toLowerCase(),
           'mis_chats': [],
         });
@@ -44,7 +51,7 @@ class FirebaseService {
       return credenciales.user;
 
     }on FirebaseAuthException catch  (e){
-      //Error si hay se muestre en el SnackBar
+      //Error si el correo es repetido o contraseña debil, se muestra en snackbar
       throw e;
     }
   }

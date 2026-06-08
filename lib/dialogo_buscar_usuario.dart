@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+//Clase de busqueda de usuarios
+//Se implementa como StatefulWidget para mutar de forma reactiva los resultados
 class DialogoBuscarUsuario extends StatefulWidget {
   const DialogoBuscarUsuario({super.key});
 
@@ -10,8 +12,9 @@ class DialogoBuscarUsuario extends StatefulWidget {
 }
 
 class _DialogoBuscarUsuarioState extends State<DialogoBuscarUsuario> {
-
+  //Estado local que almacena la busqueda
   String _nombreBusqueda = "";
+  //Controlador del campo de texto para gestionar la entrada del buffer
   final TextEditingController buscador = TextEditingController();
 
   @override
@@ -27,7 +30,7 @@ class _DialogoBuscarUsuarioState extends State<DialogoBuscarUsuario> {
       appBar: AppBar(
         title: const Text('Chattini', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: const Color(0xFFEAA64F),
+        backgroundColor: const Color(0xFFEAA64F), //Color de la app
         foregroundColor: Colors.white,
       ),
       body: Center(
@@ -39,14 +42,17 @@ class _DialogoBuscarUsuarioState extends State<DialogoBuscarUsuario> {
               const Text('Encontrar usuarios',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-            TextField(
+              //Barra de busqueda (SearchBar)
+              TextField(
               controller: buscador,
               decoration: InputDecoration(
                 labelText: 'Escribe el nombre de usuario...',
                 prefixIcon: const Icon(Icons.search),
               ),
+              //Sincronizacion de estado en linea
               onChanged: (value){
                 setState(() {
+                  //Se aplica .trim() para limpiar espacios y .toLowerCase para convertir a minusculas
                   _nombreBusqueda = value.trim().toLowerCase();
                 });
               },
@@ -54,34 +60,34 @@ class _DialogoBuscarUsuarioState extends State<DialogoBuscarUsuario> {
             Expanded(
               child:
               StreamBuilder<QuerySnapshot>(
+                //Realizamos la busqueda
                   stream: FirebaseFirestore.instance
                   .collection('usuarios')
                     .where('busqueda',isGreaterThanOrEqualTo: _nombreBusqueda)
                     .where('busqueda',isLessThanOrEqualTo: '$_nombreBusqueda\uf8ff')
-                    .snapshots(),
+                    .snapshots(), //Flujo continuo de datos en tiempo real (Stream)
                 builder: (context, snapshot) {
+                    //Mensaje en caso de error
                   if (snapshot.hasError) return const Center(child: Text("Error"));
+                  //Simbolo de busqueda por si esta cargando
                   if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
+                  //Filtra los usuarios que le salen al usuario al buscar
                   var usuarios = snapshot.data!.docs.where((doc) =>
                   doc['uid'] != FirebaseAuth.instance.currentUser!.uid
                   ).toList();
 
+                  //En caso de que no se encuentren usuarios
                   if (usuarios.isEmpty){
                     return const Center(child: Text("No se encontraron usuarios"));
                   }
-
+                  //Resultados de la busqueda
                   return ListView.builder(
                     itemCount: usuarios.length,
                     itemBuilder: (context, index) {
                       var datos = usuarios[index].data() as Map<String, dynamic>;
 
-                      //No poder buscarme a mi mismo
-                      // (se puede cambiar si es que quiero que se yo el unico usuario al principio
-                      //if (datos['uid'] == FirebaseAuth.instance.currentUser!.uid){
-                      //return const SizedBox.shrink();
-                      //}
-                      //La foto que sale al lado del usuario al buscarlo
+
                       return ListTile(
                         leading: CircleAvatar(
                           // Usamos el operador ?? para dar un valor por defecto si es null

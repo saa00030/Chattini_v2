@@ -4,6 +4,9 @@ import 'package:instachat_v2/modelos/firebase_service.dart';
 
 import 'package:instachat_v2/registro.dart';
 
+//Pantalla de acceso a la aplicacion(Login)
+//La definimos como StatefulWidget ya que gestiona estados dinamicos
+//como visibilidad de contraseña, estados de carga, etc
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -12,11 +15,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  //Clave global que identifica el formulario y valida los campos de entrada antes de enviar datos
   final _formKeys = GlobalKey<FormState>();
+  //Estados de la interfaz de usuario
   bool _passwordVisible = false;
   bool _cargando = false;
 
-  // Estos controladores nos permiten extraer el texto de los campos
+  // Estos controladores nos permiten extraer y manipular el texto de los campos
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -25,7 +30,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    // Liberamos la memoria de los controladores al destruir la pantalla
+    // Liberamos la memoria de los controladores al destruir la pantalla o navegar fuera de ella
+    //previniendo fugas de memoria
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -35,6 +41,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body:Container(
+        //Detalles visuales, añadiendole un degradado a la paleta de colores para un mejor aspecto
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -45,17 +52,19 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
       ),
+      //Mediante SafeArea, evitamos colisiones con elementos de hardware de cada telefono(barra de estado,..)
       child: SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(25.0),
         child:Form(
-          key: _formKeys,
+          key: _formKeys, //La clave a emplear
           child: Center(
+            //Previene errores de desbordamiento en caso de que el usuario gire la pantalla horizontalmente
             child:SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              //Logo
+              //Insertamos el logo de nuestra app
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
@@ -71,13 +80,17 @@ class _LoginPageState extends State<LoginPage> {
                 style:TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFFEAA64F),
+                  color: const Color(0xFFEAA64F), //Color naranja de la aplicacion
                   letterSpacing: 1.2,
                 ),
               ),
               const SizedBox(height: 30),
+
+              //Ahora vamos con los distintos campos de entrada, empezamos con el correo electronico
               TextFormField(
                 controller: _emailController,
+                //Enabled: Deshabilita este campo mientras procesa una red asincrona. Esto sirve por ejemplo si el usuario
+                //presiona 2 veces el campo, no se realicen 2 llamadas y se colapse la base de datos, con 1 llamada es suficiente
                 enabled: !_cargando,
                 decoration:  InputDecoration(
                   labelText: "Correo electrónico",
@@ -86,6 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                   //Icono de email
                   prefixIcon: Icon(Icons.email,color: Color(0xFFEAA64F)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                  //Detalles estéticos
                   border: OutlineInputBorder(
                     borderRadius: new BorderRadius.circular(15),
                     borderSide:  BorderSide.none,
@@ -95,39 +109,40 @@ class _LoginPageState extends State<LoginPage> {
                     borderSide: const BorderSide(color : Color(0xFFFFD9B3)),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                    borderRadius: BorderRadius.circular(15),
                     borderSide: const BorderSide(
                       color: Color(0xFFEAA64F), // Color naranja al escribir
                       width: 1.5,
                     ),
                   ),
 
-                  // 3. BORDE DE ERROR (Por si la validación falla)
+                  // 3. Borde de error (Por si la validación falla)
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                     borderSide: const BorderSide(color: Colors.redAccent),
                   ),
 
-                  // 4. BORDE DE ERROR CUANDO ESTÁS ESCRIBIENDO
+                  // 4. Borde de error cuando estas escribiendo
                   focusedErrorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                     borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                   ),
                 ),
+                //Valida la presencia del caracter '@'
                 validator: (value)=>(value == null || !value.contains('@'))?"Introduce un correo válido": null,
               ),
             const SizedBox(height: 20),
             TextFormField(
               controller: _passwordController,
               obscureText: !_passwordVisible, // Para ocultar la contraseña
-              enabled: !_cargando, //El usuario tiene que esperar
+              enabled: !_cargando, //Lo explicado anteriormente
               decoration:  InputDecoration(
                 labelText: "Contraseña",
                 filled: true,
                 fillColor:Colors.white,
                 prefixIcon: Icon(Icons.lock,color: Color(0xFFEAA64F)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-                // SuffixIcon para que el diseño y el centrado sean automáticos y limpios
+                // SuffixIcon: Permite alternar la visibilidad de la contraseña
                 suffixIcon: IconButton(
                   icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
                   onPressed: () {
@@ -136,30 +151,32 @@ class _LoginPageState extends State<LoginPage> {
                     });
                   },
                 ),
+                //Igual que antes, detalles visuales
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                   borderSide: const BorderSide(color: Color(0xFFFFD9B3)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15), // <--- CLAVE: Mantener el redondeo aquí
+                  borderRadius: BorderRadius.circular(15),
                   borderSide: const BorderSide(
                     color: Color(0xFFEAA64F), // Color naranja al escribir
                     width: 1.5,
                   ),
                 ),
 
-                // 3. BORDE DE ERROR (Por si la validación falla)
+                // 3. Borde de error (Por si la validación falla)
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                   borderSide: const BorderSide(color: Colors.redAccent),
                 ),
 
-                // 4. BORDE DE ERROR CUANDO ESTÁS ESCRIBIENDO
+                // 4. Borde de error cuando estas escribiendo
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
                   borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
                 ),
               ),
+              //Validor de campo obligatorio vacio
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return "Introduce una contraseña";
@@ -167,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                 return null;
               },
             ),
-          //Mensaje de resigtro
+            //Boton en caso de que no te hayas registrado
             TextButton(
               onPressed: () {
                 // Acción al presionar, por ejemplo: navegar a la página de registro
@@ -185,10 +202,10 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            //Debería recuperar la contraseña ????
+
 
             const SizedBox(height: 20),
-            //Ingresar
+            //Boton de ingresar
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -201,14 +218,17 @@ class _LoginPageState extends State<LoginPage> {
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),
+                  //Si la variable cargando es true, asigna null a onPressed. Esto desahibilita
+                  // el boton por completo, impidiendo que un usuario impaciente presione multiples veces el boton
                   onPressed: _cargando
                       ? null // Deshabilita el botón si ya está cargando
                       : () async {
                     if (_formKeys.currentState!.validate()) {
                       setState(() {
-                        _cargando = true;
+                        _cargando = true; //Activa el simbolo de espera
                       });
                       try {
+                        // trim: orden para enviar las credenciales limpias, sin espacios ni nada que se pueda colar
                         await autenticationService.iniciarSesion(
                           _emailController.text.trim(),
                           _passwordController.text,
